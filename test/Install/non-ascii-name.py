@@ -35,8 +35,8 @@ import TestSCons
 
 test = TestSCons.TestSCons()
 
-test.write('中文.txt',
-           "test stuff here in file 中文.txt.\n")
+test.write(u'中文.txt',
+           u"test stuff here in file 中文.txt.\n")
 
 test.write('SConstruct', """\
 InstallAs("b", Glob("*.txt"))

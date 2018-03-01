@@ -43,9 +43,16 @@ if not yacc:
 test.file_fixture('wrapper.py')
 
 test.write('SConstruct', """
-foo = Environment(YACCFLAGS='-d')
+import os
+foo = Environment(
+    YACCFLAGS='-d',
+    ENV = {'PATH': os.environ['PATH']})
+
 yacc = foo.Dictionary('YACC')
-bar = Environment(YACC = r'%(_python_)s wrapper.py ' + yacc)
+bar = Environment(
+    YACC = r'%(_python_)s wrapper.py ' + yacc,
+    ENV = {'PATH': os.environ['PATH']})
+
 foo.Program(target = 'foo', source = 'foo.y')
 bar.Program(target = 'bar', source = 'bar.y')
 foo.Program(target = 'hello', source = ['hello.cpp'])

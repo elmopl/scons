@@ -47,7 +47,10 @@ else:
     test.fail_test()
 
 test.write('SConstruct', """\
-env = Environment(tools=['clang', 'link'])
+import os
+env = Environment(
+    tools=['clang', 'link'],
+    ENV = {'PATH': os.environ['PATH']})
 env.SharedLibrary('foo', 'foo.c')
 """)
 

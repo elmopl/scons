@@ -626,20 +626,9 @@ class _ActionAction(ActionBase):
             SCons.Util.AddMethod(self, batch_key, 'batch_key')
 
     def print_cmd_line(self, s, target, source, env):
-        """
-        In python 3, and in some of our tests, sys.stdout is
-        a String io object, and it takes unicode strings only
-        In other cases it's a regular Python 2.x file object
-        which takes strings (bytes), and if you pass those a
-        unicode object they try to decode with 'ascii' codec
-        which fails if the cmd line has any hi-bit-set chars.
-        This code assumes s is a regular string, but should
-        work if it's unicode too.
-        """
-        try:
-            sys.stdout.write(s + u"\n")
-        except UnicodeDecodeError:
-            sys.stdout.write(s + "\n")
+        print(s.__class__)
+        sys.stdout.write(s)
+        sys.stdout.write("\n")
 
     def __call__(self, target, source, env,
                                exitstatfunc=_null,

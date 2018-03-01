@@ -72,7 +72,7 @@
 #                       This is (will be) used for reporting results back
 #                       to a central SCons test monitoring infrastructure.
 #
-#       --exclude-list file 
+#       --exclude-list file
 #                       list of tests to exclude in the current selection of test
 #                       mostly meant to easily exclude tests from -a option
 #
@@ -99,6 +99,9 @@ except ImportError as e:    # python2
     from Queue import Queue
 import subprocess
 
+if sys.version_info > (3, 0, 0):
+    import codecs
+    sys.stdout = codecs.getwriter('utf8')(sys.stdout.buffer)
 
 cwd = os.getcwd()
 
@@ -736,7 +739,7 @@ else:
     tests.extend(unittests)
     tests.extend(endtests)
     tests.sort()
-    
+
 if not tests:
     sys.stderr.write(usagestr + """
 runtest.py:  No tests were found.

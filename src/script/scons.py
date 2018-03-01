@@ -64,6 +64,9 @@ Python < 3.5 is not yet supported.\n"
     sys.stderr.write(msg % (__version__, sys.version.split()[0]))
     sys.exit(1)
 
+if sys.version_info > (3, 0, 0):
+    import codecs
+    sys.stdout = codecs.getwriter('utf8')(sys.stdout.buffer)
 
 script_dir = os.path.dirname(os.path.realpath(__file__))
 

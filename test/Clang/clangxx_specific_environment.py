@@ -33,7 +33,10 @@ if not test.where_is('clang'):
     test.skip_test("Could not find 'clang++', skipping test.\n")
 
 test.write('SConstruct', """\
-env = Environment(tools=['clang++', 'link'])
+import os
+env = Environment(
+    tools=['clang++', 'link'],
+    ENV = {'PATH': os.environ['PATH']})
 env.Program('foo.cpp')
 """)
 

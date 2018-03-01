@@ -29,17 +29,18 @@ import TestSCons
 _exe = TestSCons._exe
 test = TestSCons.TestSCons()
 
-if not test.where_is('clang'):
+clang_path = test.where_is('clang')
+if not clang_path:
     test.skip_test("Could not find 'clang', skipping test.\n")
 
 ##  This will likely NOT use clang
 
 test.write('SConstruct', """
 env = Environment()
-if env['CC'] != 'clang':
-    env['CC'] = 'clang'
+if env['CC'] != '{clang}':
+    env['CC'] = '{clang}'
 env.Program('foo.c')
-""")
+""".format(clang = clang_path))
 
 test.write('foo.c', """\
 #include <stdio.h>

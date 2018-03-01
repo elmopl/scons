@@ -53,17 +53,11 @@ import re
 
 from SCons.Node import Node
 from SCons.Node.Python import Value
-from SCons.Util import is_String, is_Sequence, is_Dict, to_bytes, PY3
-
-
-if PY3:
-    TEXTFILE_FILE_WRITE_MODE = 'w'
-else:
-    TEXTFILE_FILE_WRITE_MODE = 'wb'
+from SCons.Util import is_String, is_Sequence, is_Dict, PY3
 
 LINESEP = '\n'
 
-def _do_subst(node, subs):
+def _do_subst(env, node, subs):
     """
     Fetch the node contents and replace all instances of the keys with
     their values.  For example, if subs is
@@ -76,15 +70,7 @@ def _do_subst(node, subs):
         for (k, val) in subs:
             contents = re.sub(k, val, contents)
 
-    if 'b' in TEXTFILE_FILE_WRITE_MODE:
-        try:
-            contents = bytearray(contents, 'utf-8')
-        except UnicodeDecodeError:
-            # contents is already utf-8 encoded python 2 str i.e. a byte array
-            contents = bytearray(contents)
-
-    return contents
-
+    return env.EncodeText(contents)
 
 def _action(target, source, env):
 
@@ -100,8 +86,7 @@ def _action(target, source, env):
         raise SCons.Errors.UserError('unexpected type/class for LINESEPARATOR: %s'
                                      % repr(linesep), None)
 
-    if 'b' in TEXTFILE_FILE_WRITE_MODE:
-        linesep = to_bytes(linesep)
+    linesep = env.EncodeText(linesep)
 
     # create a dictionary to use for the substitutions
     if 'SUBST_DICT' not in env:
@@ -126,23 +111,18 @@ def _action(target, source, env):
 
     # write the file
     try:
-        if SCons.Util.PY3:
-            target_file = open(target[0].get_path(), TEXTFILE_FILE_WRITE_MODE, newline='')
-        else:
-            target_file = open(target[0].get_path(), TEXTFILE_FILE_WRITE_MODE)
+        with open(target[0].get_path(), 'wb') as target_file:
+            # separate lines by 'linesep' only if linesep is not empty
+            lsep = None
+            for line in source:
+                if lsep:
+                    target_file.write(lsep)
+
+                target_file.write(_do_subst(env, line, subs))
+                lsep = linesep
+
     except (OSError, IOError):
         raise SCons.Errors.UserError("Can't write target file %s" % target[0])
-
-    # separate lines by 'linesep' only if linesep is not empty
-    lsep = None
-    for line in source:
-        if lsep:
-            target_file.write(lsep)
-
-        target_file.write(_do_subst(line, subs))
-        lsep = linesep
-    target_file.close()
-
 
 def _strfunc(target, source, env):
     return "Creating '%s'" % target[0]

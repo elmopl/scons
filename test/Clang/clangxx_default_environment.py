@@ -29,17 +29,18 @@ import TestSCons
 _exe = TestSCons._exe
 test = TestSCons.TestSCons()
 
-if not test.where_is('clang'):
+clang_path = test.where_is('clang++')
+if not clang_path:
     test.skip_test("Could not find 'clang++', skipping test.\n")
 
 ## This will likely NOT use clang++.
 
 test.write('SConstruct', """\
 env = Environment()
-if env['CXX'] != 'clang++':
-    env['CXX'] = 'clang++'
+if env['CXX'] != '{clang}':
+    env['CXX'] = '{clang}'
 env.Program('foo.cpp')
-""")
+""".format(clang=clang_path))
 
 test.write('foo.cpp', """\
 #include <iostream>

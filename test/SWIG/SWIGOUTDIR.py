@@ -38,19 +38,22 @@ swig = test.where_is('swig')
 if not swig:
     test.skip_test('Can not find installed "swig", skipping test.\n')
 
-where_java_include=test.java_where_includes()
+where_java_include = test.java_where_includes()
 
 if not where_java_include:
     test.skip_test('Can not find installed Java include files, skipping test.\n')
 
 test.write(['SConstruct'], """\
-env = Environment(tools = ['default', 'swig'],
-                CPPPATH=%(where_java_include)s,                 
-                )
+import os
+env = Environment(
+    tools = ['default', 'swig'],
+    ENV = {'PATH': os.environ['PATH']},
+    CPPPATH=%(where_java_include)s,
+    )
 
 Java_foo_interface = env.SharedLibrary(
-    'Java_foo_interface', 
-    'Java_foo_interface.i', 
+    'Java_foo_interface',
+    'Java_foo_interface.i',
     SWIGOUTDIR = 'java/build dir',
     SWIGFLAGS = '-c++ -java -Wall',
     SWIGCXXFILESUFFIX = "_wrap.cpp")
@@ -65,19 +68,19 @@ test.write('Java_foo_interface.i', """\
 test.run(arguments = '.')
 
 test.must_exist('java/build dir/foopackJNI.java')
-test.must_exist('java/build dir/foopack.java') 
+test.must_exist('java/build dir/foopack.java')
 
 # SCons should remove the built .java files.
 test.run(arguments = '-c')
 
 test.must_not_exist('java/build dir/foopackJNI.java')
-test.must_not_exist('java/build dir/foopack.java') 
+test.must_not_exist('java/build dir/foopack.java')
 
 # SCons should realize it needs to rebuild the removed .java files.
 test.not_up_to_date(arguments = '.')
 
 test.must_exist('java/build dir/foopackJNI.java')
-test.must_exist('java/build dir/foopack.java') 
+test.must_exist('java/build dir/foopack.java')
 
 
 test.pass_test()

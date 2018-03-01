@@ -1051,6 +1051,10 @@ class Entry(Base):
 # the method of the FS class.
 _classEntry = Entry
 
+if sys.version_info >= (3, 0, 0):
+    fsencode = os.fsencode
+else:
+    fsencode = lambda name: name
 
 class LocalFS(object):
 
@@ -1106,6 +1110,8 @@ class LocalFS(object):
         return open(path)
     def unlink(self, path):
         return os.unlink(path)
+    def fsencode(self, name):
+        return fsencode(name)
 
     if hasattr(os, 'symlink'):
         def islink(self, path):
@@ -1824,10 +1830,9 @@ class Dir(Base):
         """A directory does not get scanned."""
         return None
 
-    def get_text_contents(self):
-        """We already emit things in text, so just return the binary
-        version."""
-        return self.get_contents()
+    def get_text_contents(self, encoding='utf-8'):
+        """Return decoded version of contents."""
+        return self.get_contents().decode(encoding)
 
     def get_contents(self):
         """Return content signatures and names of all our children

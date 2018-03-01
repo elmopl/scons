@@ -120,6 +120,15 @@ class _tempdirTestCase(unittest.TestCase):
     def tearDown(self):
         os.chdir(self.save_cwd)
 
+def assert_contents_invariants(contents):
+    assert "".encode('ascii') in contents, contents
+
+    if sys.version_info >= (3,0,0):
+        expected = bytes
+    else:
+        expected = str
+    assert isinstance(contents, expected), 'get_contents has to return decodable item ({0}) got ({1}) `{2}`'.format(expected, contents.__class__, repr(contents))
+
 class VariantDirTestCase(unittest.TestCase):
     def runTest(self):
         """Test variant dir functionality"""
@@ -335,6 +344,7 @@ class VariantDirTestCase(unittest.TestCase):
         f10 = fs.File('build/var1/asourcefile')
         assert f10.exists()
         assert f10.get_contents() == bytearray('stuff','utf-8'), f10.get_contents()
+        assert_contents_invariants(f10.get_contents())
 
         f11 = fs.File('src/file11')
         t, m = f11.alter_targets()
@@ -1307,6 +1317,7 @@ class FSTestCase(_tempdirTestCase):
         test.write("binary_file", "Foo\x1aBar")
         f1 = fs.File(test.workpath("binary_file"))
         assert f1.get_contents() == bytearray("Foo\x1aBar",'utf-8'), f1.get_contents()
+        assert_contents_invariants(f1.get_contents())
 
         # This tests to make sure we can decode UTF-8 text files.
         test_string = u"Foo\x1aBar"
@@ -1376,13 +1387,15 @@ class FSTestCase(_tempdirTestCase):
         # test Entry.get_contents()
         e = fs.Entry('does_not_exist')
         c = e.get_contents()
-        assert c == "", c
+        assert_contents_invariants(c)
+        assert c == b"", c
         assert e.__class__ == SCons.Node.FS.Entry
 
         test.write("file", "file\n")
         try:
             e = fs.Entry('file')
             c = e.get_contents()
+            assert_contents_invariants(c)
             assert c == bytearray("file\n",'utf-8'), c
             assert e.__class__ == SCons.Node.FS.File
         finally:
@@ -1406,26 +1419,22 @@ class FSTestCase(_tempdirTestCase):
         test.subdir("dir")
         e = fs.Entry('dir')
         c = e.get_contents()
-        assert c == "", c
+        assert_contents_invariants(c)
+        assert c == b"", c
         assert e.__class__ == SCons.Node.FS.Dir
 
         c = e.get_text_contents()
-        try:
-            eval('assert c == u"", c')
-        except SyntaxError:
-            assert c == ""
+        assert c == '', c
 
         if sys.platform != 'win32' and hasattr(os, 'symlink'):
             os.symlink('nonexistent', test.workpath('dangling_symlink'))
             e = fs.Entry('dangling_symlink')
             c = e.get_contents()
+            assert_contents_invariants(c)
             assert e.__class__ == SCons.Node.FS.Entry, e.__class__
-            assert c == "", c
+            assert c == b"", repr(c)
             c = e.get_text_contents()
-            try:
-                eval('assert c == u"", c')
-            except SyntaxError:
-                assert c == "", c
+            assert c == "", repr(c)
 
         test.write("tstamp", "tstamp\n")
         try:
@@ -2013,14 +2022,17 @@ class DirTestCase(_tempdirTestCase):
         e = self.fs.Dir(os.path.join('d', 'empty'))
         s = self.fs.Dir(os.path.join('d', 'sub'))
 
-        files = d.get_contents().split('\n')
+        files = d.get_contents().decode('utf-8').split('\n')
 
-        assert e.get_contents() == '', e.get_contents()
+        assert_contents_invariants(d.get_contents())
+        assert_contents_invariants(e.get_contents())
+
+        assert e.get_contents() == b'', e.get_contents()
         assert e.get_text_contents() == '', e.get_text_contents()
-        assert e.get_csig()+" empty" == files[0], files
-        assert f.get_csig()+" f" == files[1], files
-        assert g.get_csig()+" g" == files[2], files
-        assert s.get_csig()+" sub" == files[3], files
+        assert e.get_csig() + " empty" == files[0], files
+        assert f.get_csig() + " f" == files[1], files
+        assert g.get_csig() + " g" == files[2], files
+        assert s.get_csig() + " sub" == files[3], files
 
     def test_implicit_re_scans(self):
         """Test that adding entries causes a directory to be re-scanned
@@ -2351,14 +2363,17 @@ class EntryTestCase(_tempdirTestCase):
 
         e3d = fs.Entry('e3d')
         e3d.get_contents()
+        assert_contents_invariants(e3d.get_contents())
         assert e3d.__class__ is SCons.Node.FS.Dir, e3d.__class__
 
         e3f = fs.Entry('e3f')
         e3f.get_contents()
+        assert_contents_invariants(e3f.get_contents())
         assert e3f.__class__ is SCons.Node.FS.File, e3f.__class__
 
         e3n = fs.Entry('e3n')
         e3n.get_contents()
+        assert_contents_invariants(e3n.get_contents())
         assert e3n.__class__ is SCons.Node.FS.Entry, e3n.__class__
 
         test.subdir('e4d')
@@ -3113,6 +3128,7 @@ class RepositoryTestCase(_tempdirTestCase):
         test.write(["rep3", "contents"], "Con\x1aTents\n")
         try:
             c = fs.File("contents").get_contents()
+            assert_contents_invariants(c)
             assert c == bytearray("Con\x1aTents\n",'utf-8'), "got '%s'" % c
         finally:
             test.unlink(["rep3", "contents"])

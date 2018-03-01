@@ -40,7 +40,7 @@ test = TestSCons.TestSCons()
 fc = 'f77'
 if not test.detect_tool(fc):
     test.skip_test('Could not find a f77 tool; skipping test.\n')
-    
+
 test.subdir('include',
             'subdir',
             ['subdir', 'include'],

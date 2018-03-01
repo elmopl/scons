@@ -273,7 +273,7 @@ class NodeInfoBaseTestCase(unittest.TestCase):
 
         f = ni1.format()
         assert f == ['x', 'y', 'z'], f
- 
+
         field_list = ['xxx', 'zzz', 'aaa']
 
         f = ni1.format(field_list)
@@ -586,7 +586,7 @@ class NodeTestCase(unittest.TestCase):
     def test_get_csig(self):
         """Test generic content signature calculation
         """
-        
+
         class TestNodeInfo(SCons.Node.NodeInfoBase):
             __slots__ = ('csig',)
         try:
@@ -625,7 +625,7 @@ class NodeTestCase(unittest.TestCase):
             __slots__ = ('csig',)
         SCons.Node.Node.NodeInfo = TestNodeInfo
         node = SCons.Node.Node()
- 
+
         binfo = node.get_binfo()
         assert isinstance(binfo, SCons.Node.BuildInfoBase), binfo
 

@@ -126,13 +126,12 @@ def build_specfile(target, source, env):
     """ Builds a RPM specfile from a dictionary with string metadata and
     by analyzing a tree of nodes.
     """
-    file = open(target[0].get_abspath(), 'w')
 
     try:
-        file.write( build_specfile_header(env) )
-        file.write( build_specfile_sections(env) )
-        file.write( build_specfile_filesection(env, source) )
-        file.close()
+        with open(target[0].get_abspath(), 'wb') as output_file:
+            output_file.write(env.EncodeText(build_specfile_header(env)))
+            output_file.write(env.EncodeText(build_specfile_sections(env)))
+            output_file.write(env.EncodeText(build_specfile_filesection(env, source)))
 
         # call a user specified function
         if 'CHANGE_SPECFILE' in env:
@@ -148,12 +147,12 @@ def build_specfile(target, source, env):
 def build_specfile_sections(spec):
     """ Builds the sections of a rpm specfile.
     """
-    str = ""
+    contents = []
 
     mandatory_sections = {
         'DESCRIPTION'  : '\n%%description\n%s\n\n', }
 
-    str = str + SimpleTagCompiler(mandatory_sections).compile( spec )
+    contents.append(SimpleTagCompiler(mandatory_sections).compile(spec))
 
     optional_sections = {
         'DESCRIPTION_'        : '%%description -l %s\n%s\n\n',
@@ -185,14 +184,14 @@ def build_specfile_sections(spec):
     if 'X_RPM_CLEAN' not in spec:
         spec['X_RPM_CLEAN'] = '[ -n "$RPM_BUILD_ROOT" -a "$RPM_BUILD_ROOT" != / ] && rm -rf "$RPM_BUILD_ROOT"'
 
-    str = str + SimpleTagCompiler(optional_sections, mandatory=0).compile( spec )
+    contents.append(SimpleTagCompiler(optional_sections, mandatory=0).compile(spec))
 
-    return str
+    return ''.join(contents)
 
 def build_specfile_header(spec):
     """ Builds all sections but the %file of a rpm specfile
     """
-    str = ""
+    contents = []
 
     # first the mandatory sections
     mandatory_header_fields = {
@@ -203,7 +202,7 @@ def build_specfile_header(spec):
         'SUMMARY'        : 'Summary: %s\n',
         'LICENSE'        : 'License: %s\n', }
 
-    str = str + SimpleTagCompiler(mandatory_header_fields).compile( spec )
+    contents.append(SimpleTagCompiler(mandatory_header_fields).compile(spec))
 
     # now the optional tags
     optional_header_fields = {
@@ -241,8 +240,8 @@ def build_specfile_header(spec):
     if 'X_RPM_BUILDROOT' not in spec:
         spec['X_RPM_BUILDROOT'] = '%{_tmppath}/%{name}-%{version}-%{release}'
 
-    str = str + SimpleTagCompiler(optional_header_fields, mandatory=0).compile( spec )
-    return str
+    contents.append(SimpleTagCompiler(optional_header_fields, mandatory=0).compile(spec))
+    return ''.join(contents)
 
 #
 # mandatory and optional file tags
@@ -250,12 +249,12 @@ def build_specfile_header(spec):
 def build_specfile_filesection(spec, files):
     """ builds the %file section of the specfile
     """
-    str  = '%files\n'
+    contents  = ['%files\n']
 
     if 'X_RPM_DEFATTR' not in spec:
         spec['X_RPM_DEFATTR'] = '(-,root,root)'
 
-    str = str + '%%defattr %s\n' % spec['X_RPM_DEFATTR']
+    contents.append('%%defattr %s\n' % spec['X_RPM_DEFATTR'])
 
     supported_tags = {
         'PACKAGING_CONFIG'           : '%%config %s',
@@ -268,25 +267,24 @@ def build_specfile_filesection(spec, files):
         'PACKAGING_X_RPM_DOCDIR'     : '%%docdir %s',
         'PACKAGING_X_RPM_GHOST'      : '%%ghost %s', }
 
-    for file in files:
+    for src_file in files:
         # build the tagset
         tags = {}
         for k in list(supported_tags.keys()):
             try:
-                v = file.GetTag(k)
+                v = src_file.GetTag(k)
                 if v:
                     tags[k] = v
             except AttributeError:
                 pass
 
         # compile the tagset
-        str = str + SimpleTagCompiler(supported_tags, mandatory=0).compile( tags )
+        contents.append(SimpleTagCompiler(supported_tags, mandatory=0).compile(tags))
+        contents.append(' ')
+        contents.append(src_file.GetTag('PACKAGING_INSTALL_LOCATION'))
+        contents.append('\n\n')
 
-        str = str + ' '
-        str = str + file.GetTag('PACKAGING_INSTALL_LOCATION')
-        str = str + '\n\n'
-
-    return str
+    return ''.join(contents)
 
 class SimpleTagCompiler(object):
     """ This class is a simple string substition utility:

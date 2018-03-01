@@ -65,14 +65,18 @@ test.write("mod.i", """\
 test.write('SConstruct', """\
 import distutils.sysconfig
 import sys
+import os
 
 DefaultEnvironment( tools = [ 'swig' ] )
 
 env = Environment(
+    ENV = {
+        'PATH': os.environ['PATH'],
+    },
     SWIGFLAGS = [
         '-python'
     ],
-    CPPPATH = [ 
+    CPPPATH = [
         distutils.sysconfig.get_python_inc()
     ],
     SHLIBPREFIX = ""

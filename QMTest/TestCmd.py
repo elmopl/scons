@@ -310,6 +310,10 @@ import types
 IS_PY3 = sys.version_info[0] == 3
 IS_WINDOWS = sys.platform == 'win32'
 
+if sys.version_info >= (3, 0, 0):
+    fsencode = lambda name: name.encode('utf-8')
+else:
+    fsencode = lambda name: name
 
 class null(object):
     pass
@@ -1881,7 +1885,7 @@ class TestCmd(object):
                     do_chmod(os.path.join(dirpath, name))
             do_chmod(top)
 
-    def write(self, file, content, mode='wb'):
+    def write(self, filename, content, mode='wb'):
         """Writes the specified content text (second argument) to the
         specified file name (first argument).  The file name may be
         a list, in which case the elements are concatenated with the
@@ -1890,10 +1894,10 @@ class TestCmd(object):
         exist.  The I/O mode for the file may be specified; it must
         begin with a 'w'.  The default is 'wb' (binary write).
         """
-        file = self.canonicalize(file)
+        filename = self.canonicalize(filename)
         if mode[0] != 'w':
             raise ValueError("mode must begin with 'w'")
-        with open(file, mode) as f:
+        with open(fsencode(filename), mode) as f:
             try:
                 f.write(content)
             except TypeError as e:

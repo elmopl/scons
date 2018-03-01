@@ -40,7 +40,11 @@ if not yacc:
     test.skip_test('No yacc or bison found; skipping test.\n')
 
 test.write('SConstruct', """
-foo = Environment(YACCFLAGS='-v -d')
+import os
+foo = Environment(
+    ENV = {'PATH': os.environ['PATH']},
+    YACCFLAGS='-v -d',
+    )
 foo.CFile(source = 'foo.y')
 """ % locals())
 

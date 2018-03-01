@@ -31,8 +31,9 @@ Test the ability to handle internationalized package and file meta-data.
 These are x-rpm-Group, description, summary and the lang_xx file tag.
 """
 
-import os
 import SCons.Tool.rpmutils
+import os
+import subprocess
 
 import TestSCons
 
@@ -104,21 +105,25 @@ test.must_not_exist( 'bin/main' )
 
 cmd = 'rpm -qp --queryformat \'%%{GROUP}-%%{SUMMARY}-%%{DESCRIPTION}\' %s'
 
+def run_intl(to_run):
+    p = subprocess.Popen(to_run, shell=True, stdout=subprocess.PIPE)
+    return ''.join(line.decode('utf-8') for line in p.stdout)
+
 os.environ['LANGUAGE'] = 'de'
-out = os.popen( cmd % test.workpath(machine_rpm) ).read()
-test.fail_test( out != 'Applikation/büro-hallo-das sollte wirklich lang sein' )
+out = run_intl(cmd % test.workpath(machine_rpm))
+test.fail_test( out != u'Applikation/büro-hallo-das sollte wirklich lang sein' )
 
 os.environ['LANGUAGE'] = 'fr'
-out = os.popen( cmd % test.workpath(machine_rpm) ).read()
-test.fail_test( out != 'Application/bureau-bonjour-ceci devrait être vraiment long' )
+out = run_intl( cmd % test.workpath(machine_rpm) )
+test.fail_test( out != u'Application/bureau-bonjour-ceci devrait être vraiment long' )
 
 os.environ['LANGUAGE'] = 'en'
-out = os.popen( cmd % test.workpath(machine_rpm) ).read()
-test.fail_test( out != 'Application/office-hello-this should be really long' )
+out = run_intl( cmd % test.workpath(machine_rpm) )
+test.fail_test( out != u'Application/office-hello-this should be really long' )
 
 os.environ['LC_ALL'] = 'ae'
-out = os.popen( cmd % test.workpath(machine_rpm) ).read()
-test.fail_test( out != 'Application/office-hello-this should be really long' )
+out = run_intl( cmd % test.workpath(machine_rpm) )
+test.fail_test( out != u'Application/office-hello-this should be really long' )
 
 #
 # test INTERNATIONAL PACKAGE TAGS
